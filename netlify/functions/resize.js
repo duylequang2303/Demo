@@ -1,5 +1,5 @@
 const sharp = require("sharp");
-const fetch = require("node-fetch"); // cần thêm cho netlify
+const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 exports.handler = async (event) => {
   try {
@@ -15,7 +15,6 @@ exports.handler = async (event) => {
       };
     }
 
-    // Danh sách link ảnh (cú pháp chuẩn)
     const reiImages = [
       "https://i.pinimg.com/736x/f6/49/41/f649412a33b9260c2b558297c39d45ac.jpg",
       "https://i.pinimg.com/736x/ec/2a/22/ec2a221b0693b58fa20fca14bbac2358.jpg",
@@ -28,20 +27,19 @@ exports.handler = async (event) => {
       "https://i.pinimg.com/736x/36/60/c3/3660c3f9ee36da8bc1e18200412b07d6.jpg"
     ];
 
-    // random 1 ảnh
     const imageUrl = reiImages[Math.floor(Math.random() * reiImages.length)];
 
-    // fetch ảnh
     const response = await fetch(imageUrl);
     if (!response.ok) throw new Error(`Fetch failed: ${response.status} ${response.statusText}`);
 
     const contentType = response.headers.get("content-type") || "image/jpeg";
     const inputBuffer = Buffer.from(await response.arrayBuffer());
 
-    // resize (giữ tỷ lệ, fit inside để không bị crop)
-    let pipeline = sharp(inputBuffer).resize(w || null, h || null, { fit: "inside" });
+    let pipeline = sharp(inputBuffer);
+    if (w || h) {
+      pipeline = pipeline.resize(w || undefined, h || undefined, { fit: "inside" });
+    }
 
-    // Chọn format trả về dựa trên content-type gốc
     let outBuffer;
     if (contentType.includes("png")) {
       outBuffer = await pipeline.png().toBuffer();
