@@ -1,0 +1,36 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Auto Resize Demo</title>
+</head>
+<body>
+    <h2>Upload ảnh để resize</h2>
+    <input type="file" id="fileInput" />
+    <br><br>
+    <img id="preview" alt="Preview" style="max-width:300px;" />
+
+    <script>
+    async function uploadAndResize(file) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result.split(",")[1];
+        const res = await fetch("/.netlify/functions/resize", {
+          method: "POST",
+          body: JSON.stringify({ imageBuffer: base64, width: 400, height: 400 }),
+        });
+        const data = await res.json();
+        document.getElementById("preview").src =
+          "data:image/png;base64," + data.resizedImage;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    document.getElementById("fileInput").addEventListener("change", (e) => {
+      if (e.target.files.length > 0) {
+        uploadAndResize(e.target.files[0]);
+      }
+    });
+    </script>
+</body>
+</html>
